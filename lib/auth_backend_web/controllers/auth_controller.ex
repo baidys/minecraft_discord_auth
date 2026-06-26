@@ -33,8 +33,7 @@ defmodule AuthBackendWeb.AuthController do
     rescue
       _ in RuntimeError ->
         if auth?(ds_username, mc_username) do
-          a = Task.async(fn -> insertIntoFile(mc_username, true) end)
-          IO.inspect(a.pid)
+          Task.async(fn -> insertIntoFile(mc_username, true) end)
           text(conn, "OK : connexion réussie")
         else
           if createUser?(ds_username, mc_username, ip) do
@@ -69,7 +68,7 @@ defmodule AuthBackendWeb.AuthController do
   end
 
   defp createUser?(ds_user, mc_user, ip_user) do
-    case ipAlredyExist?(ip_user) || userAlredyExist?(mc_user, ds_user) do
+    case userAlredyExist?(mc_user, ds_user) do
       true ->
         false
 
@@ -106,19 +105,6 @@ defmodule AuthBackendWeb.AuthController do
     end
   end
 
-  defp ipAlredyExist?(ip_user) do
-    try do
-      Enum.map(AuthBackend.Repo.all(Player), fn x ->
-        if x.ip == ip_user do
-          raise "found"
-        end
-      end)
-
-      false
-    rescue
-      _ in RuntimeError -> true
-    end
-  end
 
   defp insertIntoFile(username, status) do
     AuthBackend.LoggedPlayers.removePlayer(username)

@@ -1,0 +1,95 @@
+command /callapi <player>:
+    permission: *
+    trigger:
+        set {_server} to "https://authserver.com"
+        set {_secret} to "secret_key"
+        set {_name} to arg-1
+    
+        set {_request} to prepare GET request on "%{_server}%/smp/logged?user=%{_name}%"
+        set {_request}'s headers to "secret: %{_secret}%"
+
+        execute {_request}
+        set {_response} to last response of {_request}
+
+        send {_response} to player
+
+        if status of {_response} is "OK":
+            set {_body} to body of {_response}
+            set {_json} to json from {_body} 
+            set {_value} to value "logged" of {_json}
+            broadcast "%{_value}%"    
+            send formatted "<blue><link:""%{_server}%/auth/smp?mc_username=%{_name}%"">Clique pour te connecter</link></blue>" to player
+
+
+on join:
+    set {_gamemode} to gamemode of player
+    apply slowness 255 to player for 1000000000 ticks
+    apply blindness 255 to player for 1000000000 ticks
+    apply invisibility 255 to player for 1000000000 ticks
+    apply resistance 255 to player for 100000000 ticks
+    apply jump boost 255 to player for 10000000 ticks
+    set player's gamemode to adventure
+
+    set {_server} to "https://authserver.com"
+    set {_secret} to "secret_key"
+    
+    set {_name} to player's name
+    set {_request} to prepare GET request on "%{_server}%/smp/logged?user=%{_name}%"
+    set {_request}'s headers to "secret: %{_secret}%"
+    execute {_request}
+    set {_response} to last response of {_request}
+
+    if status of {_response} is "OK":
+        set {_body} to body of {_response}
+        set {_json} to json from {_body} 
+        set {_value} to value "logged" of {_json}
+        if {_value} is true:
+            remove slowness from player
+            remove blindness from player
+            remove resistance from player
+            remove jump boost from player
+            remove invisibility from player
+            set player's gamemode to {_gamemode}
+            send "&6[&3AUTH&6] &fVotre identité a été confirmée. Bon jeu !" to player
+            stop
+
+        send "&8&m--------------------------------" to player
+        send "&6&l AUTHENTIFICATION" to player
+        send "&8&m--------------------------------" to player
+        send "&eCliquez sur le bouton suivant pour vous connecter et confirmer votre identité :" to player
+        send "" to player
+        send formatted "<red>[<link:""%{_server}%/auth/smp?mc_username=%{_name}%"">Connexion</link>]</red>" to player
+        send "" to player
+        send "&fUne fois l'authentification terminée, vous pourrez jouer." to player
+        send "&8&m--------------------------------" to player
+        
+        while 1 is 1 :
+            wait a second
+            if {_count} is 60:
+                remove slowness from player
+                remove blindness from player
+                remove resistance from player
+                remove jump boost from player
+                remove invisibility from player
+                set player's gamemode to {_gamemode}
+                kick player due to "&6[&3AUTH&6] &cTemps de connexion écoulé, &eveuillez vous reconnecter pour réessayer&7. &n&7En cas de problème&7, contactez &bb10&7."
+                stop
+
+            add 1 to {_count}
+	    
+            execute {_request}
+            set {_response} to last response of {_request}
+
+            if status of {_response} is "OK":
+                set {_body} to body of {_response}
+                set {_json} to json from {_body} 
+                set {_value} to value "logged" of {_json}
+                if {_value} is true:
+                    set player's gamemode to {_gamemode}
+                    remove slowness from player
+                    remove blindness from player
+                    remove invisibility from  player
+                    remove resistance from player
+                    remove jump boost from player
+                    send "&6[&3AUTH&6] &fVotre identité a été confirmée. Bon jeu !" to player
+                    stop
