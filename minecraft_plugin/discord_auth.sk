@@ -22,7 +22,6 @@ command /callapi <player>:
 
 
 on join:
-    set {_gamemode} to gamemode of player
     apply slowness 255 to player for 1000000000 ticks
     apply blindness 255 to player for 1000000000 ticks
     apply invisibility 255 to player for 1000000000 ticks
@@ -49,7 +48,7 @@ on join:
             remove resistance from player
             remove jump boost from player
             remove invisibility from player
-            set player's gamemode to {_gamemode}
+            set player's gamemode to survival
             send "&6[&3AUTH&6] &fVotre identité a été confirmée. Bon jeu !" to player
             stop
 
@@ -71,7 +70,7 @@ on join:
                 remove resistance from player
                 remove jump boost from player
                 remove invisibility from player
-                set player's gamemode to {_gamemode}
+                set player's gamemode to survival
                 kick player due to "&6[&3AUTH&6] &cTemps de connexion écoulé, &eveuillez vous reconnecter pour réessayer&7. &n&7En cas de problème&7, contactez &bb10&7."
                 stop
 
@@ -85,7 +84,7 @@ on join:
                 set {_json} to json from {_body} 
                 set {_value} to value "logged" of {_json}
                 if {_value} is true:
-                    set player's gamemode to {_gamemode}
+                    set player's gamemode to survival
                     remove slowness from player
                     remove blindness from player
                     remove invisibility from  player
