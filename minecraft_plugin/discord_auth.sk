@@ -1,10 +1,13 @@
+on skript start:
+    clear {auth::*}
+
 command /callapi <player>:
     permission: *
     trigger:
-        set {_server} to "https://authserver.com"
-        set {_secret} to "secret_key"
+        set {_server} to "https://authserver.com/"
+        set {_secret} to "secret"
         set {_name} to arg-1
-    
+
         set {_request} to prepare GET request on "%{_server}%/smp/logged?user=%{_name}%"
         set {_request}'s headers to "secret: %{_secret}%"
 
@@ -15,13 +18,13 @@ command /callapi <player>:
 
         if status of {_response} is "OK":
             set {_body} to body of {_response}
-            set {_json} to json from {_body} 
+            set {_json} to json from {_body}
             set {_value} to value "logged" of {_json}
-            broadcast "%{_value}%"    
+            broadcast "%{_value}%"
             send formatted "<blue><link:""%{_server}%/auth/smp?mc_username=%{_name}%"">Clique pour te connecter</link></blue>" to player
 
-
 on join:
+    set {auth.%player's uuid%} to true
     apply slowness 255 to player for 1000000000 ticks
     apply blindness 255 to player for 1000000000 ticks
     apply invisibility 255 to player for 1000000000 ticks
@@ -29,9 +32,9 @@ on join:
     apply jump boost 255 to player for 10000000 ticks
     set player's gamemode to adventure
 
-    set {_server} to "https://authserver.com"
-    set {_secret} to "secret_key"
-    
+    set {_server} to "https://authserver.com/"
+    set {_secret} to "secret"
+
     set {_name} to player's name
     set {_request} to prepare GET request on "%{_server}%/smp/logged?user=%{_name}%"
     set {_request}'s headers to "secret: %{_secret}%"
@@ -40,7 +43,7 @@ on join:
 
     if status of {_response} is "OK":
         set {_body} to body of {_response}
-        set {_json} to json from {_body} 
+        set {_json} to json from {_body}
         set {_value} to value "logged" of {_json}
         if {_value} is true:
             remove slowness from player
@@ -48,6 +51,7 @@ on join:
             remove resistance from player
             remove jump boost from player
             remove invisibility from player
+            set {auth.%player's uuid%} to false
             set player's gamemode to survival
             send "&6[&3AUTH&6] &fVotre identité a été confirmée. Bon jeu !" to player
             stop
@@ -61,8 +65,8 @@ on join:
         send "" to player
         send "&fUne fois l'authentification terminée, vous pourrez jouer." to player
         send "&8&m--------------------------------" to player
-        
-        while 1 is 1 :
+
+        while {auth.%player's uuid%} is true:
             wait a second
             if {_count} is 60:
                 remove slowness from player
@@ -70,18 +74,19 @@ on join:
                 remove resistance from player
                 remove jump boost from player
                 remove invisibility from player
+                set {auth.%player's uuid%} to false
                 set player's gamemode to survival
                 kick player due to "&6[&3AUTH&6] &cTemps de connexion écoulé, &eveuillez vous reconnecter pour réessayer&7. &n&7En cas de problème&7, contactez &bb10&7."
                 stop
 
             add 1 to {_count}
-	    
+
             execute {_request}
             set {_response} to last response of {_request}
 
             if status of {_response} is "OK":
                 set {_body} to body of {_response}
-                set {_json} to json from {_body} 
+                set {_json} to json from {_body}
                 set {_value} to value "logged" of {_json}
                 if {_value} is true:
                     set player's gamemode to survival
@@ -90,5 +95,42 @@ on join:
                     remove invisibility from  player
                     remove resistance from player
                     remove jump boost from player
+                    set {auth.%player's uuid%} to false
                     send "&6[&3AUTH&6] &fVotre identité a été confirmée. Bon jeu !" to player
                     stop
+                if {_value} is "failed":
+                    remove slowness from player
+                    remove blindness from player
+                    remove invisibility from  player
+                    remove resistance from player
+                    remove jump boost from player
+                    set {auth.%player's uuid%} to false
+                    kick player due to "&6[&3AUTH&6] &cConnexion échoue, &eveuillez vous reconnecter pour réessayer&7. &n&7En cas de problème&7, contactez &bb10&7."
+                    stop
+
+on chat:
+    if {auth.%player's uuid%} is true:
+        cancel event
+on command:
+    if {auth.%player's uuid%} is true:
+        cancel event
+on quit:
+    set {auth.%player's uuid%} to false
+on drop:
+    if {auth.%player's uuid%} is true:
+        cancel event
+on inventory click:
+    if {auth.%player's uuid%} is true:
+        cancel event
+on player move:
+    if {auth.%player's uuid%} is true:
+        cancel event
+on swap hand item:
+    if {auth.%player's uuid%} is true:
+        cancel event
+on right click:
+    if {auth.%player's uuid%} is true:
+        cancel event
+on left click:
+    if {auth.%player's uuid%} is true:
+        cancel event
