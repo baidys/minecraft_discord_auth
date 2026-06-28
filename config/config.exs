@@ -19,7 +19,8 @@ config :ueberauth, Ueberauth.Strategy.Discord.OAuth,
 config :auth_backend,
   ecto_repos: [AuthBackend.Repo],
   generators: [timestamp_type: :utc_datetime],
-  smp_secret: System.fetch_env!("SMP_SECRET")
+  smp_secret: System.fetch_env!("SMP_SECRET"),
+  guild_id: System.fetch_env!("GUILD_ID")
 
 # Configures the endpoint
 config :auth_backend, AuthBackendWeb.Endpoint,

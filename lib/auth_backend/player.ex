@@ -13,7 +13,7 @@ defmodule AuthBackend.Player do
   @doc false
   def changeset(player, attrs) do
     player
-    |> cast(attrs, [:ds_username, :mc_username, :ip])
-    |> validate_required([:ds_username, :mc_username, :ip])
+    |> cast(attrs, [:ds_username, :mc_username])
+    |> validate_required([:ds_username, :mc_username])
   end
 end
