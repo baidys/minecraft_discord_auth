@@ -17,7 +17,6 @@ defmodule AuthBackendWeb.AuthController do
         } = conn,
         _params
       ) do
-    dbg()
     ds_username = String.downcase(auth.info.nickname)
     mc_username = String.downcase(mc_username)
     guild_id = Application.get_env(:auth_backend, :guild_id)
@@ -27,40 +26,41 @@ defmodule AuthBackendWeb.AuthController do
     if not member_of_guild? do
       Task.async(fn -> insertIntoFile(mc_username, "failed") end)
       text(conn, "Accès refusé : vous devez rejoindre le serveur Discord pour vous authentifier.")
-    end
-
-    if Repo.exists?(
-         from p in Player, where: p.ds_username == ^ds_username and p.mc_username == ^mc_username
-       ) do
-      Task.async(fn -> insertIntoFile(mc_username, true) end)
-      text(conn, "OK : connexion réussie, vous pouvez retourner sur le jeu")
     else
-      if Repo.exists?(from p in Player, where: p.ds_username == ^ds_username) do
-        Task.async(fn -> insertIntoFile(mc_username, "failed") end)
-        text(conn, "Authentification échouée : compte discord déjà liée")
+      if Repo.exists?(
+           from p in Player,
+             where: p.ds_username == ^ds_username and p.mc_username == ^mc_username
+         ) do
+        Task.async(fn -> insertIntoFile(mc_username, true) end)
+        text(conn, "OK : connexion réussie, vous pouvez retourner sur le jeu")
       else
-        if Repo.exists?(from p in Player, where: p.mc_username == ^mc_username) do
+        if Repo.exists?(from p in Player, where: p.ds_username == ^ds_username) do
           Task.async(fn -> insertIntoFile(mc_username, "failed") end)
-          text(conn, "Authentification échouée : compte minecraft déjà liée")
+          text(conn, "Authentification échouée : compte discord déjà liée")
         else
-          player =
-            Player.changeset(%Player{}, %{
-              ds_username: ds_username,
-              mc_username: mc_username
-            })
+          if Repo.exists?(from p in Player, where: p.mc_username == ^mc_username) do
+            Task.async(fn -> insertIntoFile(mc_username, "failed") end)
+            text(conn, "Authentification échouée : compte minecraft déjà liée")
+          else
+            player =
+              Player.changeset(%Player{}, %{
+                ds_username: ds_username,
+                mc_username: mc_username
+              })
 
-          case Repo.insert(player) do
-            {:error, _} ->
-              Task.async(fn -> insertIntoFile(mc_username, "failed") end)
-              text(conn, "Authentification échouée : contact avec la base de donnée")
+            case Repo.insert(player) do
+              {:error, _} ->
+                Task.async(fn -> insertIntoFile(mc_username, "failed") end)
+                text(conn, "Authentification échouée : contact avec la base de donnée")
 
-            {:ok, _} ->
-              Task.async(fn -> insertIntoFile(mc_username, true) end)
+              {:ok, _} ->
+                Task.async(fn -> insertIntoFile(mc_username, true) end)
 
-              text(
-                conn,
-                "OK : création du compte et connexion réussie, vous pouvez retourner sur le jeu"
-              )
+                text(
+                  conn,
+                  "OK : création du compte et connexion réussie, vous pouvez retourner sur le jeu"
+                )
+            end
           end
         end
       end
