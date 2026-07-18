@@ -20,7 +20,8 @@ config :auth_backend,
   ecto_repos: [AuthBackend.Repo],
   generators: [timestamp_type: :utc_datetime],
   smp_secret: System.fetch_env!("SMP_SECRET"),
-  guild_id: System.fetch_env!("GUILD_ID")
+  guild_id: System.fetch_env!("GUILD_ID"),
+  mc_server_ip: System.fetch_env!("MC_SERVER_IP")
 
 # Configures the endpoint
 config :auth_backend, AuthBackendWeb.Endpoint,

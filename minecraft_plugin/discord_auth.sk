@@ -1,27 +1,289 @@
-on skript start:
+on load:
     clear {auth::*}
+    clear {secret}
+    clear {server}
+    set {server} to "https://authserver.com"
+    set {secret} to "secretkey"
 
-command /callapi <player>:
+command /createLogin <string> <string>:
     permission: *
     trigger:
-        set {_server} to "https://authserver.com/"
-        set {_secret} to "secret"
-        set {_name} to arg-1
+        set {_mc-username} to arg-1
+        set {_ds-username} to arg-2
 
-        set {_request} to prepare GET request on "%{_server}%/smp/logged?user=%{_name}%"
-        set {_request}'s headers to "secret: %{_secret}%"
+        set {_request} to prepare POST request on "%{server}%/players/create"
+        set {_request}'s headers to "secret: %{secret}%"
+        add "mc_username:%{_mc-username}%" to query params of {_request}
+        add "ds_username:%{_ds-username}%" to query params of {_request}
 
         execute {_request}
         set {_response} to last response of {_request}
 
-        send {_response} to player
+        set {_body} to body of {_response}
+        set {_json} to json from {_body}
 
-        if status of {_response} is "OK":
-            set {_body} to body of {_response}
-            set {_json} to json from {_body}
-            set {_value} to value "logged" of {_json}
-            broadcast "%{_value}%"
-            send formatted "<blue><link:""%{_server}%/auth/smp?mc_username=%{_name}%"">Clique pour te connecter</link></blue>" to player
+        if status code of {_response} is 200:
+            set {_message} to value "ok" of {_json}
+            send "&6[&3AUTH&6] &f%{_message}%" to sender
+        else if status code of {_response} is 502:
+            send "&6[&3AUTH&6] &fweb backend is unreachable" to sender 
+        else:
+            set {_message} to value "error" of {_json}
+            send "&6[&3AUTH&6] &f%{_message}%" to sender
+
+command /logged <offline player>:
+    permission: *
+    trigger:
+        set {_mc-username} to arg-1
+
+        set {_request} to prepare GET request on "%{server}%/players/logged"
+        set {_request}'s headers to "secret: %{secret}%"
+        add "mc_username:%{_mc-username}%" to query params of {_request}
+
+        execute {_request}
+        set {_response} to last response of {_request}
+
+        set {_body} to body of {_response}
+        set {_json} to json from {_body}
+
+        if status code of {_response} is 200:
+            set {_message} to value "logged" of {_json}
+            send "&6[&3AUTH&6] &f%{_message}%" to sender
+        else if status code of {_response} is 502:
+            send "&6[&3AUTH&6] &fweb backend is unreachable" to sender 
+        else:
+            set {_message} to value "error" of {_json}
+            send "&6[&3AUTH&6] &f%{_message}%" to sender
+
+command /templog <offline player>:
+    permission: *
+    trigger:
+        set {_mc-username} to arg-1
+
+        set {_request} to prepare GET request on "%{server}%/players/templog"
+        set {_request}'s headers to "secret: %{secret}%"
+        add "mc_username:%{_mc-username}%" to query params of {_request}
+
+        execute {_request}
+        set {_response} to last response of {_request}
+
+        set {_body} to body of {_response}
+        set {_json} to json from {_body}
+
+        if status code of {_response} is 200:
+            set {_message} to value "ok" of {_json}
+            send "&6[&3AUTH&6] &f%{_message}%" to sender
+        else if status code of {_response} is 502:
+            send "&6[&3AUTH&6] &fweb backend is unreachable" to sender 
+        else:
+            set {_message} to value "error" of {_json}
+            send "&6[&3AUTH&6] &f%{_message}%" to sender
+
+command /loginInfo <offline player>:
+    permission: *
+    trigger:
+        set {_mc-username} to arg-1
+
+        set {_request} to prepare GET request on "%{server}%/players/show"
+        set {_request}'s headers to "secret: %{secret}%"
+        add "mc_username:%{_mc-username}%" to query params of {_request}
+
+        execute {_request}
+        set {_response} to last response of {_request}
+
+        set {_body} to body of {_response}
+        set {_json} to json from {_body}
+
+        if status code of {_response} is 200:
+            set {_ds-username} to value "ds_username" of {_json}
+            set {_first} to value "first_connection" of {_json}
+            set {_change} to value "last_change" of {_json}
+            send "&6[&3AUTH&6] &fLogin info of Minecraft player %{_mc-username}%:" to sender
+            send "&eDiscord username: &f%{_ds-username}%" to sender
+            send "&eFirst connection: &f%{_first}%" to sender
+            send "&eLast account change: &f%{_change}%" to sender
+        else if status code of {_response} is 502:
+            send "&6[&3AUTH&6] &fweb backend is unreachable" to sender 
+        else:
+            set {_message} to value "error" of {_json}
+            send "&6[&3AUTH&6] &f%{_message}%" to sender
+
+command /loginInfoDiscord <string>:
+    permission: *
+    trigger:
+        set {_ds-username} to arg-1
+
+        set {_request} to prepare GET request on "%{server}%/players/show"
+        set {_request}'s headers to "secret: %{secret}%"
+        add "ds_username:%{_ds-username}%" to query params of {_request}
+
+        execute {_request}
+        set {_response} to last response of {_request}
+
+        set {_body} to body of {_response}
+        set {_json} to json from {_body}
+
+        if status code of {_response} is 200:
+            set {_mc-username} to value "mc_username" of {_json}
+            set {_first} to value "first_connection" of {_json}
+            set {_change} to value "last_change" of {_json}
+            send "&6[&3AUTH&6] &fLogin info of Discord user %{_ds-username}%:" to sender
+            send "&eMinecraft username: &f%{_mc-username}%" to sender
+            send "&eFirst connection: &f%{_first}%" to sender
+            send "&eLast account change: &f%{_change}%" to sender
+        else if status code of {_response} is 502:
+            send "&6[&3AUTH&6] &fweb backend is unreachable" to sender 
+        else:
+            set {_message} to value "error" of {_json}
+            send "&6[&3AUTH&6] &f%{_message}%" to sender
+
+command /editLoginDiscord <offline player> <string>:
+    permission: *
+    trigger:
+        set {_mc-username} to arg-1
+        set {_new-ds-username} to arg-2
+
+        set {_request} to prepare POST request on "%{server}%/players/edit"
+        set {_request}'s headers to "secret: %{secret}%"
+        add "mc_username:%{_mc-username}%" to query params of {_request}
+        add "new_ds_username:%{_new-ds-username}%" to query params of {_request}
+
+        execute {_request}
+        set {_response} to last response of {_request}
+
+        set {_body} to body of {_response}
+        set {_json} to json from {_body}
+
+        if status code of {_response} is 200:
+            set {_message} to value "ok" of {_json}
+            send "&6[&3AUTH&6] &f%{_message}%" to sender
+        else if status code of {_response} is 502:
+            send "&6[&3AUTH&6] &fweb backend is unreachable" to sender 
+        else:
+            set {_message} to value "error" of {_json}
+            send "&6[&3AUTH&6] &f%{_message}%" to sender
+
+command /editLoginMinecraft <string> <offline player>:
+    permission: *
+    trigger:
+        set {_ds-username} to arg-1
+        set {_new-mc-username} to arg-2
+
+        set {_request} to prepare POST request on "%{server}%/players/edit"
+        set {_request}'s headers to "secret: %{secret}%"
+        add "ds_username:%{_ds-username}%" to query params of {_request}
+        add "new_mc_username:%{_new-mc-username}%" to query params of {_request}
+
+        execute {_request}
+        set {_response} to last response of {_request}
+
+        set {_body} to body of {_response}
+        set {_json} to json from {_body}
+
+        if status code of {_response} is 200:
+            set {_message} to value "ok" of {_json}
+            send "&6[&3AUTH&6] &f%{_message}%" to sender
+        else if status code of {_response} is 502:
+            send "&6[&3AUTH&6] &fweb backend is unreachable" to sender 
+        else:
+            set {_message} to value "error" of {_json}
+            send "&6[&3AUTH&6] &f%{_message}%" to sender
+
+command /resetLoginIp <offline player>:
+    permission: *
+    trigger:
+        set {_mc-username} to arg-1
+
+        set {_request} to prepare GET request on "%{server}%/players/resetip"
+        set {_request}'s headers to "secret: %{secret}%"
+        add "mc_username:%{_mc-username}%" to query params of {_request}
+
+        execute {_request}
+        set {_response} to last response of {_request}
+
+        set {_body} to body of {_response}
+        set {_json} to json from {_body}
+
+        if status code of {_response} is 200:
+            set {_message} to value "ok" of {_json}
+            send "&6[&3AUTH&6] &f%{_message}%" to sender
+        else if status code of {_response} is 502:
+            send "&6[&3AUTH&6] &fweb backend is unreachable" to sender 
+        else:
+            set {_message} to value "error" of {_json}
+            send "&6[&3AUTH&6] &f%{_message}%" to sender
+
+command /resetLoginIpDiscord <string>:
+    permission: *
+    trigger:
+        set {_ds-username} to arg-1
+
+        set {_request} to prepare GET request on "%{server}%/players/resetip"
+        set {_request}'s headers to "secret: %{secret}%"
+        add "ds_username:%{_ds-username}%" to query params of {_request}
+
+        execute {_request}
+        set {_response} to last response of {_request}
+
+        set {_body} to body of {_response}
+        set {_json} to json from {_body}
+
+        if status code of {_response} is 200:
+            set {_message} to value "ok" of {_json}
+            send "&6[&3AUTH&6] &f%{_message}%" to sender
+        else if status code of {_response} is 502:
+            send "&6[&3AUTH&6] &fweb backend is unreachable" to sender 
+        else:
+            set {_message} to value "error" of {_json}
+            send "&6[&3AUTH&6] &f%{_message}%" to sender
+
+command /deleteLogin <offline player>:
+    permission: *
+    trigger:
+        set {_mc-username} to arg-1
+
+        set {_request} to prepare DELETE request on "%{server}%/players"
+        set {_request}'s headers to "secret: %{secret}%"
+        add "mc_username:%{_mc-username}%" to query params of {_request}
+
+        execute {_request}
+        set {_response} to last response of {_request}
+
+        set {_body} to body of {_response}
+        set {_json} to json from {_body}
+
+        if status code of {_response} is 200:
+            set {_message} to value "ok" of {_json}
+            send "&6[&3AUTH&6] &f%{_message}%" to sender
+        else if status code of {_response} is 502:
+            send "&6[&3AUTH&6] &fweb backend is unreachable" to sender 
+        else:
+            set {_message} to value "error" of {_json}
+            send "&6[&3AUTH&6] &f%{_message}%" to sender
+
+command /deleteLoginDiscord <string>:
+    permission: *
+    trigger:
+        set {_ds-username} to arg-1
+
+        set {_request} to prepare DELETE request on "%{server}%/players"
+        set {_request}'s headers to "secret: %{secret}%"
+        add "ds_username:%{_ds-username}%" to query params of {_request}
+
+        execute {_request}
+        set {_response} to last response of {_request}
+
+        set {_body} to body of {_response}
+        set {_json} to json from {_body}
+
+        if status code of {_response} is 200:
+            set {_message} to value "ok" of {_json}
+            send "&6[&3AUTH&6] &f%{_message}%" to sender
+        else if status code of {_response} is 502:
+            send "&6[&3AUTH&6] &fweb backend is unreachable" to sender 
+        else:
+            set {_message} to value "error" of {_json}
+            send "&6[&3AUTH&6] &f%{_message}%" to sender
 
 on join:
     set {auth.%player's uuid%} to true
@@ -32,16 +294,13 @@ on join:
     apply jump boost 255 to player for 10000000 ticks
     set player's gamemode to adventure
 
-    set {_server} to "https://authserver.com/"
-    set {_secret} to "secret"
-
     set {_name} to player's name
-    set {_request} to prepare GET request on "%{_server}%/smp/logged?user=%{_name}%"
-    set {_request}'s headers to "secret: %{_secret}%"
+    set {_request} to prepare GET request on "%{server}%/players/logged?mc_username=%{_name}%"
+    set {_request}'s headers to "secret: %{secret}%"
     execute {_request}
     set {_response} to last response of {_request}
 
-    if status of {_response} is "OK":
+    if status code of {_response} is 200:
         set {_body} to body of {_response}
         set {_json} to json from {_body}
         set {_value} to value "logged" of {_json}
@@ -61,7 +320,7 @@ on join:
         send "&8&m--------------------------------" to player
         send "&eCliquez sur le bouton suivant pour vous connecter et confirmer votre identité :" to player
         send "" to player
-        send formatted "<red>[<link:""%{_server}%/auth/smp?mc_username=%{_name}%"">Connexion</link>]</red>" to player
+        send formatted "<red>[<link:""%{server}%/auth?mc_username=%{_name}%"">Connexion</link>]</red>" to player
         send "" to player
         send "&fUne fois l'authentification terminée, vous pourrez jouer." to player
         send "&8&m--------------------------------" to player
@@ -76,7 +335,7 @@ on join:
                 remove invisibility from player
                 set {auth.%player's uuid%} to false
                 set player's gamemode to survival
-                kick player due to "&6[&3AUTH&6] &cTemps de connexion écoulé, &eveuillez vous reconnecter pour réessayer&7. &n&7En cas de problème&7, contactez &bb10&7."
+                kick player due to "&6[&3AUTH&6] &cTemps de connexion écoulé, &eveuillez vous reconnecter pour réessayer&7. &n&7En cas de problème&7, contactez &badmin&7."
                 stop
 
             add 1 to {_count}
@@ -84,7 +343,7 @@ on join:
             execute {_request}
             set {_response} to last response of {_request}
 
-            if status of {_response} is "OK":
+            if status code of {_response} is 200:
                 set {_body} to body of {_response}
                 set {_json} to json from {_body}
                 set {_value} to value "logged" of {_json}
