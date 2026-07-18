@@ -14,6 +14,7 @@ defmodule AuthBackend.Application do
        repos: Application.fetch_env!(:auth_backend, :ecto_repos), skip: skip_migrations?()},
       {DNSCluster, query: Application.get_env(:auth_backend, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: AuthBackend.PubSub},
+      {AuthBackend.Ratelimit, [clean_period: :timer.minutes(30)]},
       # Start a worker by calling: AuthBackend.Worker.start_link(arg)
       # {AuthBackend.Worker, arg},
       # Start to serve requests, typically the last entry

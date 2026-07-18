@@ -1,4 +1,4 @@
-defmodule AuthBackend.Player do
+defmodule AuthBackend.Players.Player do
   use Ecto.Schema
   import Ecto.Changeset
 
@@ -13,7 +13,10 @@ defmodule AuthBackend.Player do
   @doc false
   def changeset(player, attrs) do
     player
-    |> cast(attrs, [:ds_username, :mc_username])
+    |> cast(attrs, [:ds_username, :mc_username, :ip])
     |> validate_required([:ds_username, :mc_username])
+    |> validate_length(:ds_username, min: 2)
+    |> validate_length(:ds_username, max: 33)
+    |> validate_length(:mc_username, max: 33)
   end
 end

@@ -14,18 +14,24 @@ defmodule AuthBackendWeb.Router do
     plug :accepts, ["json"]
   end
 
-  scope "/smp", AuthBackendWeb do
+  scope "/players", AuthBackendWeb do
     pipe_through :api
 
-    get "/logged", MinecraftController, :islogged
+    post "/create", ApiController, :create
+    get "/logged", ApiController, :logged
+    get "/templog", ApiController, :templog
+    get "/show", ApiController, :show
+    post "/edit", ApiController, :edit
+    get "/resetip", ApiController, :reset_ip
+    delete "/", ApiController, :delete
   end
 
-  scope "/", AuthBackendWeb do
+  scope "/auth", AuthBackendWeb do
     pipe_through :browser
 
-    get "/auth/smp", MinecraftController, :request
-    get "/auth/:provider", AuthController, :request
-    get "/auth/:provider/callback", AuthController, :callback
+    get "/", AuthController, :login
+    get "/:provider", AuthController, :request
+    get "/:provider/callback", AuthController, :callback
   end
 
   # Other scopes may use custom stacks.
