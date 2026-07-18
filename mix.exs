@@ -67,7 +67,9 @@ defmodule AuthBackend.MixProject do
       {:dns_cluster, "~> 0.2.0"},
       {:bandit, "~> 1.5"},
       {:ueberauth, "~> 0.10"},
-      {:ueberauth_discord, "~> 0.7"}
+      {:ueberauth_discord, "~> 0.7"},
+      {:remote_ip, "~> 1.2"},
+      {:hammer, "~> 7.0.0"}
     ]
   end
 
